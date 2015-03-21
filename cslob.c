@@ -61,6 +61,7 @@ int command_info(int argc, char** argv)
 
 	printf("   encoding: %s\n", cslob_get_encoding(file));
 	printf("compression: %s\n", cslob_get_compression(file));
+	printf(" blob count: %i\n", cslob_get_blobcount(file));
 
 
 	// Print tags
@@ -92,6 +93,39 @@ int command_info(int argc, char** argv)
 	return EXIT_SUCCESS;	
 }
 
+
+/**
+ * Handle the "find" command
+ */
+int command_find(int argc, char** argv)
+{
+	cslob_file* file = NULL;
+	int error;
+
+	if(argc != 4)
+	{
+		printf("Usage: cslob find <filename> <search term>\n");
+
+		return EXIT_FAILURE;
+	}
+
+
+	// Open the file
+	if(!(file = cslob_open(argv[2], &error)))
+	{
+		cslob_printerror(error);
+		return EXIT_FAILURE;
+	} 
+
+	
+
+
+	// Close file
+	cslob_close(file);
+
+
+	return EXIT_SUCCESS;
+}
 
 
 /**

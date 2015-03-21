@@ -4,6 +4,8 @@
 
 #include <malloc.h>
 
+#include <arpa/inet.h>
+
 #include <libcslob.h>
 
 #ifdef DEBUG
@@ -65,9 +67,9 @@ const static char* CONST_ERRSTRING[CONST_ERRSTRING_COUNT] = {
  *
  * @return 1 on success, 0 on error
  */
-static char cslob_read(FILE* file, char* buffer, size_t count)
+static char cslob_read(FILE* file, void* buffer, size_t count)
 {
-	char* curp = buffer;
+	char* curp = (char *)buffer;
 	size_t retval;
 	int i;
 	size_t bytes_read = 0;
@@ -355,11 +357,28 @@ cslob_file* cslob_open(const char* filename, int* error)
 	{
 		*error = CSLOB_ERR_READ;
 
+		cslob_free_tags(&tmp_slob->tags);
 		cslob_free_content_types(&tmp_slob->content_types);
 		free(tmp_slob);
 
 		return NULL;
 	}
+
+
+	// Read the blob count
+	uint32_t blob_tmp; 
+	if(!cslob_read(tmp_slob->file, &blob_tmp, 4))
+	{
+		*error = CSLOB_ERR_READ;
+
+		cslob_free_tags(&tmp_slob->tags);
+		cslob_free_content_types(&tmp_slob->content_types);
+		free(tmp_slob);
+
+		return NULL;
+	}
+
+	tmp_slob->blobcount = ntohl(blob_tmp);
 	
 
 	return tmp_slob;
