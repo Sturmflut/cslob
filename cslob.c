@@ -129,17 +129,19 @@ int command_find(int argc, char** argv)
     // Find
     cslob_result* results = cslob_find(file, argv[3], &numresults);
 
-
-    for(i = 0; i < numresults; i++)
+    if(results)
     {
-        printf("%li %s\n",
-            cslob_result_get_blob_id(results, i),
-            cslob_result_get_key(results, i));
+
+        for(i = 0; i < numresults; i++)
+        {
+            printf("%li %s\n",
+                   cslob_result_get_blob_id(results, i),
+                   cslob_result_get_key(results, i));
+        }
+
+
+        cslob_free_results(results);
     }
-
-
-    cslob_free_results(results);
-
 
     // Close file
     cslob_close(file);
