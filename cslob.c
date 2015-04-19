@@ -129,6 +129,7 @@ int command_find(int argc, char** argv)
     // Find
     cslob_result* results = cslob_find(file, argv[3], &numresults);
 
+    // Print results
     if(results)
     {
 
@@ -140,7 +141,7 @@ int command_find(int argc, char** argv)
         }
 
 
-        cslob_free_results(results);
+        cslob_free_results(results, numresults);
     }
 
     // Close file

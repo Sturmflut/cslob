@@ -104,7 +104,10 @@ const char* cslob_get_content_type(const cslob_file* slob, unsigned char index);
 cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults);
 
 
-void cslob_free_results(cslob_result* results);
+/**
+ * @brief Free a list of results returned by cslob_find
+ */
+void cslob_free_results(cslob_result* results, uint64_t numresults);
 
 
 /**

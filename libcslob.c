@@ -60,9 +60,8 @@ struct cslob_file_internal {
 
 
 struct cslob_result_internal {
-    uint64_t blob_id;
-    char* content_type;
     char* key;
+    uint64_t blob_id;
 };
 
 
@@ -798,7 +797,7 @@ uint32_t cslob_get_ref_count(const cslob_file* slob)
 cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults)
 {
     uint64_t i;
-    uint64_t num_found = 0;
+    uint64_t cur;
 
     char* markers = NULL;
 
@@ -834,6 +833,7 @@ cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults)
 
 
     // Walk through all the refs and mark which fit the term
+    *numresults = 0;
     for(i = 0; i < slob->ref_count; i++)
     {
         struct cslob_ref* ref = cslob_read_ref(slob, i);
@@ -855,31 +855,81 @@ cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults)
         if(ucol_strcollUTF8(coll, term, len, ref->key, len, &status) == UCOL_EQUAL)
         {
             CSLOB_DEBUG("cslob_find found a match!\n");
+
             markers[i] = 1;
+            (*numresults)++;
         }
 
         cslob_free_ref(ref);
     }
 
 
-    // Close collator
+    // Close the collator
     ucol_close(coll);
+
+
+    // Build the result list from the markers
+
+    // Allocate memory
+    cslob_result* results = (cslob_result*) calloc(*numresults, sizeof(cslob_result));
+
+    if(!results)
+    {
+        free(markers);
+        *numresults = 0;
+        return NULL;
+    }
+
+
+    // Re-read the matching refs
+    cur = 0;
+    for(i = 0; i < slob->ref_count; i++)
+    {
+        if(markers[i])
+        {
+            struct cslob_ref* ref = cslob_read_ref(slob, i);
+
+            if(!ref)
+            {
+                cslob_free_results(results, *numresults);
+                *numresults = 0;
+                return NULL;
+            }
+
+            // Recycle the existing string!
+            results[cur].key = ref->key;
+            results[cur].blob_id = (ref->bin_index << 16) + ref->item_index;
+
+            // Free only the fragement and the struct, not the key
+            free(ref->fragment);
+            free(ref);
+
+            cur++;
+        }
+    }
+
 
     // Free markers
     free(markers);
 
-    // FIXME: Return results
-    return NULL;
+    // Return results
+    return results;
 }
 
 
-/**
- * @brief Free a list of results returned by cslob_find
- */
-void cslob_free_results(cslob_result* results)
+void cslob_free_results(cslob_result* results, uint64_t numresults)
 {
+    uint64_t i;
+
     if(results)
+    {
+        // Free the key strings
+        for(i = 0; i < numresults; i++)
+            if(results[i].key)
+                free(results[i].key);
+
         free(results);
+    }
 }
 
 
