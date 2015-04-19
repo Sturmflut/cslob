@@ -1,7 +1,7 @@
 *.swp
 cslob
-cslob.config
-cslob.creator
-cslob.files
-cslob.includes
+*.config
+*.creator
+*.files
+*.includes
 *.user
