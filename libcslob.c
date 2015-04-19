@@ -4,7 +4,9 @@
 
 #include <malloc.h>
 
-#include <libcslob.h>
+#include <unicode/ucol.h>
+
+#include "libcslob.h"
 
 
 #ifdef DEBUG
@@ -99,7 +101,22 @@ static void convert_be_to_local(char* buffer, size_t length)
         buffer[length - 1 - i] = tmp;
     }
 #endif
-} 
+}
+
+
+/**
+ * @brief Return the minimum of two integers
+ * @param a Integer A
+ * @param b Integer B
+ * @return Minimum of A and B
+ */
+static int inline min(int a, int b)
+{
+    if(a < b)
+        return a;
+
+    return b;
+}
 
 
 /**
@@ -368,7 +385,7 @@ static int cslob_read_content_types(FILE* file, struct cslob_content_types* type
  * @brief Free a reference entry
  * @param ref Pointer to the reference
  */
-static cslob_free_ref(struct cslob_ref* ref)
+static void cslob_free_ref(struct cslob_ref* ref)
 {
     if(ref)
     {
@@ -388,7 +405,6 @@ static cslob_free_ref(struct cslob_ref* ref)
  */
 static struct cslob_ref* cslob_read_ref(cslob_file* slob, uint64_t index)
 {
-    int i;
     uint64_t ref_offset = 0;
 
 
@@ -787,10 +803,25 @@ cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults)
     char* markers = NULL;
 
 
-    CSLOB_DEBUG("cslob_find, term = \"%s\"\n", term);
-
     if(!slob)
         return NULL;
+
+
+    CSLOB_DEBUG("cslob_find, term = \"%s\"\n", term);
+
+
+    // Allocate collator
+    UErrorCode status = U_ZERO_ERROR;
+    UCollator *coll = ucol_open("en_US", &status);
+    ucol_setAttribute(coll, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+
+    if(!U_SUCCESS(status))
+    {
+        CSLOB_DEBUG("cslob_find, ICU collator not initialized\n");
+
+        return NULL;
+    }
+
 
 
     // Allocate memory for the markers
@@ -817,12 +848,27 @@ cslob_result* cslob_find(cslob_file* slob, char* term, uint64_t* numresults)
                     ref->item_index,
                     ref->fragment);
 
+        // Find minimum length
+        int len = min(strlen(term), strlen(ref->key));
+
+
+        if(ucol_strcollUTF8(coll, term, len, ref->key, len, &status) == UCOL_EQUAL)
+        {
+            CSLOB_DEBUG("cslob_find found a match!\n");
+            markers[i] = 1;
+        }
+
         cslob_free_ref(ref);
     }
 
 
+    // Close collator
+    ucol_close(coll);
+
+    // Free markers
     free(markers);
 
+    // FIXME: Return results
     return NULL;
 }
 
