@@ -1,2 +1,8 @@
 *.swp
 cslob
+
+cslob.config
+cslob.creator
+cslob.files
+cslob.includes
+*.user
