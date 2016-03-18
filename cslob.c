@@ -67,6 +67,7 @@ int command_info(int argc, char** argv)
     printf("store offset: %li\n", cslob_get_store_offset(file));
     printf("   file size: %li\n", cslob_get_file_size(file));
     printf("   ref count: %i\n", cslob_get_ref_count(file));
+    printf("   bin count: %i\n", cslob_get_bin_count(file));
 
 
     // Print tags

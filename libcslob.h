@@ -70,6 +70,12 @@ uint32_t cslob_get_ref_count(const cslob_file* slob);
 
 
 /**
+ * @brief Return the compressed bin count
+ */
+uint32_t cslob_get_bin_count(const cslob_file* slob);
+
+
+/**
  * @brief Get the number of declared tags
  */
 uint32_t cslob_get_tag_count(const cslob_file* slob);

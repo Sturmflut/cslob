@@ -56,6 +56,7 @@ struct cslob_file_internal {
     uint64_t  file_size;
     size_t    ref_offset;
     uint32_t  ref_count;
+    uint32_t  bin_count;
 };
 
 
@@ -662,6 +663,26 @@ cslob_file* cslob_open(const char* filename, int* error)
     tmp_slob->ref_offset = ftell(tmp_slob->file);
 
 
+    // Read the compressed bin count
+    CSLOB_DEBUG("Reading bin count\n");
+
+    // Seek to the beginning of the store
+    fseek(tmp_slob->file, tmp_slob->store_offset, SEEK_SET);
+
+    if(!cslob_read(tmp_slob->file, &tmp_slob->bin_count, 4))
+    {
+        *error = CSLOB_ERR_READ;
+
+        cslob_free_tags(&tmp_slob->tags);
+        cslob_free_content_types(&tmp_slob->content_types);
+        free(tmp_slob);
+
+        return NULL;
+    }
+
+    convert_be_to_local((char *) &tmp_slob->bin_count, sizeof(tmp_slob->bin_count));
+
+
     return tmp_slob;
 }
 
@@ -789,6 +810,15 @@ uint32_t cslob_get_ref_count(const cslob_file* slob)
 {
     if(slob)
         return slob->ref_count;
+
+    return 0;
+}
+
+
+uint32_t cslob_get_bin_count(const cslob_file* slob)
+{
+    if(slob)
+        return slob->bin_count;
 
     return 0;
 }
